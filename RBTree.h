@@ -16,7 +16,8 @@ class RBTree {
     class Node{
         public:
             Node(const KeyType& key, const ValueType& value,
-                    Node* parent = nullptr, Node* child_left = nullptr, Node* child_right = nullptr);
+                    Node* parent = nullptr, Node* child_left = nullptr,
+                    Node* child_right = nullptr);
             ~Node() = default;
             KeyType getKey();
             RBTree::color getColor();
@@ -29,8 +30,7 @@ class RBTree {
             friend class RBTree;
 
         protected:
-            void insert_left(const KeyType& key, const ValueType& value);
-            void insert_right(const KeyType& key, const ValueType& value);
+            Node* insert(const KeyType& key, const ValueType& value);
         private:
             KeyType key;
             ValueType value;
@@ -40,6 +40,8 @@ class RBTree {
             RBTree::color nodeColor = RBTree::color::red;//по умолчанию изначально вставляется красный потомок
         };
 public:
+    RBTree();
+    ~RBTree()= default;//потом заменить на последовательное удаление узлов
     void add(const KeyType& key, const ValueType& value);
 
 private:
@@ -47,6 +49,26 @@ private:
     size_t _cap;
     size_t _height;
 };
+
+template<typename ValueType, typename KeyType>
+RBTree<ValueType, KeyType>::RBTree() {
+    _root = nullptr;
+    _cap = 0;
+    _height = 0;
+}
+
+template<typename ValueType, typename KeyType>
+void RBTree<ValueType, KeyType>::add(const KeyType &key, const ValueType &value) {
+    Node* new_node = nullptr;//указатель на новый объект
+    if(_cap == 0){
+        _root = new Node(key, value);
+        new_node = _root;
+    }
+    else{
+        new_node = _root->insert(key, value);
+    }
+    _cap += 1;
+}
 
 template<typename ValueType, typename KeyType>
 RBTree<ValueType, KeyType>::Node::Node(const KeyType &key,
@@ -106,6 +128,31 @@ typename RBTree<ValueType, KeyType>::Node *RBTree<ValueType, KeyType>::Node::get
         current_node = current_node->parent;
     }
     return current_node;
+}
+
+template<typename ValueType, typename KeyType>
+typename RBTree<ValueType, KeyType>::Node *RBTree<ValueType, KeyType>::Node::insert(const KeyType &key, const ValueType &value) {
+    Node* current_node = this;
+    if(current_node->key <= key){
+        if(!current_node->child_left){
+            current_node->child_left =
+                    new Node(key, value, current_node);
+            return current_node->child_left;
+        }
+        else{
+            return current_node->child_left->insert(key, value);
+        }
+    }
+    else{
+        if(!current_node->child_right){
+            current_node->child_right =
+                    new Node(key, value, current_node);
+            return current_node->child_right;
+        }
+        else{
+            return current_node->child_right->insert(key, value);
+        }
+    }
 }
 
 #endif //RED_BLACK_TREE_RBTREE_H
