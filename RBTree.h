@@ -6,7 +6,7 @@
 #define RED_BLACK_TREE_RBTREE_H
 
 #include <cstddef>
-
+#include <list>
 template <typename ValueType, typename KeyType>
 class RBTree {
     enum color{
@@ -27,6 +27,7 @@ class RBTree {
             Node* getBrother();
             Node* getUncle();
             Node* getGrandPa();
+            ValueType& getValue();
             friend class RBTree;
 
         protected:
@@ -47,7 +48,8 @@ public:
     RBTree();
     ~RBTree()= default;//потом заменить на последовательное удаление узлов
     void add(const KeyType& key, const ValueType& value);
-
+    ValueType find(const KeyType& key)const;
+    size_t getCapacity()const;
 protected:
     void left_rotate(Node* node);
     void right_rotate(Node* node);
@@ -56,6 +58,7 @@ protected:
     void third_add_case(Node* node);
     void fourth_add_case(Node* node);
     void fifth_add_case(Node* node);
+    Node* find(const KeyType& key, Node* root);
 private:
     Node* _root;
     size_t _cap;
@@ -189,6 +192,29 @@ void RBTree<ValueType, KeyType>::right_rotate(RBTree::Node *node) {
 }
 
 template<typename ValueType, typename KeyType>
+ValueType RBTree<ValueType, KeyType>::find(const KeyType &key) const{
+    Node* result_node = find(key, _root);
+    return result_node? result_node->getValue(): NULL;
+}
+
+template<typename ValueType, typename KeyType>
+typename RBTree<ValueType, KeyType>::Node *RBTree<ValueType, KeyType>::find(const KeyType &key, RBTree::Node *root) {
+    Node* node = root;
+    while(node){
+        if(key < node->getKey()){
+            node = node->getLeftChild();
+        }
+        else if(key > node->getKey()){
+            node = node->getRightChild();
+        }
+        else{
+            return node;
+        }
+    }
+    return nullptr;
+}
+
+template<typename ValueType, typename KeyType>
 RBTree<ValueType, KeyType>::Node::Node(const KeyType &key,
         const ValueType &value, RBTree::Node *parent,
                                        RBTree::Node *child_left, RBTree::Node *child_right){
@@ -291,6 +317,11 @@ void RBTree<ValueType, KeyType>::Node::setLeftChild(RBTree::Node *new_child) {
 template<typename ValueType, typename KeyType>
 void RBTree<ValueType, KeyType>::Node::setRightChild(RBTree::Node *new_child) {
     child_right = new_child;
+}
+
+template<typename ValueType, typename KeyType>
+ValueType &RBTree<ValueType, KeyType>::Node::getValue() {
+    return value;
 }
 
 #endif //RED_BLACK_TREE_RBTREE_H
