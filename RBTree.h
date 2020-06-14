@@ -49,7 +49,8 @@ public:
     ~RBTree()= default;//потом заменить на последовательное удаление узлов
     void add(const KeyType& key, const ValueType& value);
     ValueType find(const KeyType& key)const;
-    size_t getCapacity()const;
+    [[nodiscard]] size_t getCapacity()const;
+    [[nodiscard]] bool isEmpty()const;
 protected:
     void left_rotate(Node* node);
     void right_rotate(Node* node);
@@ -212,6 +213,16 @@ typename RBTree<ValueType, KeyType>::Node *RBTree<ValueType, KeyType>::find(cons
         }
     }
     return nullptr;
+}
+
+template<typename ValueType, typename KeyType>
+size_t RBTree<ValueType, KeyType>::getCapacity() const {
+    return _cap;
+}
+
+template<typename ValueType, typename KeyType>
+bool RBTree<ValueType, KeyType>::isEmpty() const {
+    return _cap == 0;
 }
 
 template<typename ValueType, typename KeyType>
