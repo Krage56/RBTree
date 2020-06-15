@@ -57,12 +57,6 @@ public:
     [[nodiscard]] bool isEmpty()const;
 protected:
     void afterDelFix(Node* node);
-    void firstDelCase(Node* node);
-    void secondDelCase(Node* node);
-    void thirdDelCase(Node* node);
-    void fourthDelCase(Node* node);
-    void fifthDelCase(Node* node);
-    void sixthDelCase(Node* node);
 
     void leftRotate(Node* node);
     void rightRotate(Node* node);
@@ -291,7 +285,6 @@ RBTree<ValueType, KeyType>::~RBTree() {
 template<typename ValueType, typename KeyType>
 void RBTree<ValueType, KeyType>::remove(const KeyType& key) {
     Node* node = find(key, _root);
-    Node* processing = nullptr;
     if(!node)
         return;
     if(node->getLeftChild() == nullptr &&
@@ -304,164 +297,113 @@ void RBTree<ValueType, KeyType>::remove(const KeyType& key) {
         else if(p){
             p->setLeftChild(nullptr);
         }
-
-        delete(node);
     }
-
+    else if(!node->getLeftChild()){
+        Node* p = node->getParent();
+        afterDelFix(node);
+        if(p->getRightChild() == node){
+            p->setRightChild(node->getRightChild());
+        }
+        if(p->getLeftChild() == node){
+            p->setLeftChild(node->getRightChild());
+        }
+    }
+    else if(!node->getRightChild()){
+        Node* p = node->getParent();
+        afterDelFix(node);
+        if(p->getRightChild() == node){
+            p->setRightChild(node->getLeftChild());
+        }
+        if(p->getLeftChild() == node){
+            p->setLeftChild(node->getLeftChild());
+        }
+    }
+    else{
+        if(!node->getRightChild()->getLeftChild()){
+            Node* p = node->getParent();
+            afterDelFix(node);
+            if(p->getRightChild() == node){
+                p->setRightChild(node->getRightChild());
+            }
+            if(p->getLeftChild() == node){
+                p->setLeftChild(node->getRightChild());
+            }
+            node->getRightChild()->setLeftChild(node->getLeftChild());
+        }
+        else{
+            Node* l = getLastLeft(node->getRightChild());
+            afterDelFix(l);
+            node->setKey(l->getKey());
+            node->setValue(l->getValue());
+            if(l->getParent()->getRightChild() == l){
+                l->getParent()->setRightChild(nullptr);
+            }
+            else{
+                l->getParent()->setLeftChild(nullptr);
+            }
+            node = l;
+        }
+    }
+    delete(node);
     _cap -= 1;
 }
 
 template<typename ValueType, typename KeyType>
 void RBTree<ValueType, KeyType>::afterDelFix(RBTree::Node *node) {
-    while (node != _root && node->nodeColor == color::black) {
+    while (node != _root && node->getColor() == color::black) {
         if (node == node->getParent()->getLeftChild()) {
-            Node *w = node->getParent()->getRightChild();
-            if (w->getColor() == color::red) {
-                w->setColor(color::black);
+            Node *s = node->getBrother();
+            if (s->getColor() == color::red) {
+                s->setColor(color::black);
                 node->getParent()->setColor(color::red);
-                leftRotate (node->parent);
-                w = node->getParent()->getRightChild();
+                leftRotate(node->parent);
             }
-            if (w->getLeftChild()->getColor() == color::black && w->getRightChild()->getColor() == color::black) {
-                w->setColor(color::red);
+            if ((!s->getLeftChild() || s->getLeftChild()->getColor() == color::black)
+            && (!s->getRightChild() || s->getRightChild()->getColor() == color::black)) {
+                s->setColor(color::red);
                 node = node->getParent();
-            } else {
-                if (w->getRightChild()->getColor() == color::black) {
-                    w->getLeftChild()->setColor(color::black);
-                    w->setColor(color::red);
-                    rightRotate (w);
-                    w = node->getParent()->getRightChild();
+            }
+            else{
+                if (!s->getRightChild() || s->getRightChild()->getColor() == color::black) {
+                    s->getLeftChild()->setColor(color::black);
+                    s->setColor(color::red);
+                    rightRotate(s);
+                    s = node->getParent()->getRightChild();
                 }
-                w->setColor(node->getParent()->getColor());
+                s->setColor(node->getParent()->getColor());
                 node->getParent()->setColor(color::black);
-                w->getRightChild()->setColor(color::black);
-                leftRotate (node->getParent());
+                s->getRightChild()->setColor(color::black);
+                leftRotate(node->getParent());
                 node = _root;
             }
         } else {
-            Node *w = node->getParent()->getLeftChild();
-            if (w->getColor() == color::red) {
-                w->setColor(color::black);
+            Node *s = node->getBrother();
+            if (s->getColor() == color::red) {
+                s->setColor(color::black);
                 node->getParent()->setColor(color::red);
-                rightRotate (node->getParent());
-                w = node->getParent()->getLeftChild();
+                rightRotate(node->getParent());
             }
-            if (w->getRightChild()->getColor() == color::black && w->getLeftChild()->getColor() == color::black) {
-                w->setColor(color::red);
+            if ((!s->getRightChild() || s->getRightChild()->getColor() == color::black) &&
+            (!s->getLeftChild() || s->getLeftChild()->getColor() == color::black)) {
+                s->setColor(color::red);
                 node = node->getParent();
-            } else {
-                if (w->getLeftChild()->getColor() == color::black) {
-                    w->getRightChild()->setColor(color::black);
-                    w->setColor(color::red);
-                    leftRotate (w);
-                    w = node->getParent()->getLeftChild();
+            }
+            else{
+                if (s->getLeftChild()->getColor() == color::black) {
+                    s->getRightChild()->setColor(color::black);
+                    s->setColor(color::red);
+                    leftRotate(s);
+                    s = node->getParent()->getLeftChild();
                 }
-                w->setColor(node->getParent()->getColor());
+                s->setColor(node->getParent()->getColor());
                 node->getParent()->setColor(color::black);
-                w->getLeftChild()->setColor(color::black);
-                rightRotate (node->parent);
+                s->getLeftChild()->setColor(color::black);
+                rightRotate(node->parent);
                 node = _root;
             }
         }
     }
     node->setColor(color::black);
-}
-
-template<typename ValueType, typename KeyType>
-void RBTree<ValueType, KeyType>::firstDelCase(RBTree::Node *node) {
-    if(node->getParent()){
-        secondDelCase(node);
-    }
-}
-
-template<typename ValueType, typename KeyType>
-void RBTree<ValueType, KeyType>::secondDelCase(RBTree::Node *node) {
-    Node* s = node->getBrother();
-    Node *p = node->getParent();
-    if(s->getColor() == color::red){
-        p->setColor(color::red);
-        s->setColor(color::black);
-    }
-    if(p->getLeftChild() == node){
-        leftRotate(/*node*/p);
-    }
-    else{
-        rightRotate(/*node*/p);
-    }
-    thirdDelCase(node);
-}
-
-template<typename ValueType, typename KeyType>
-void RBTree<ValueType, KeyType>::thirdDelCase(RBTree::Node *node) {
-    Node* s = node->getBrother();
-    if(node->getParent()->getColor() == color::black &&
-    s->getColor() == color::black && (!s->getLeftChild() ||
-    s->getLeftChild()->getColor() == color::black) && (!s->getLeftChild() ||
-    s->getLeftChild()->getColor() == color::black)){
-        s->setColor(color::red);
-        firstDelCase(node->getParent());
-    }
-    else{
-        fourthDelCase(node);
-    }
-}
-
-template<typename ValueType, typename KeyType>
-void RBTree<ValueType, KeyType>::fourthDelCase(RBTree::Node *node) {
-    Node* s = node->getBrother();
-    if(node->getParent()->getColor() == color::red &&
-        s->getColor() == color::black && (!s->getLeftChild() ||
-        s->getLeftChild()->getColor() == color::black)
-        && (!s->getLeftChild() ||
-        s->getLeftChild()->getColor() == color::black)){
-        s->setColor(color::red);
-        node->getParent()->setColor(color::black);
-    }
-    else{
-        fifthDelCase(node);
-    }
-}
-
-template<typename ValueType, typename KeyType>
-void RBTree<ValueType, KeyType>::fifthDelCase(RBTree::Node *node) {
-    Node* s = node->getBrother();
-    if(s->getColor() == color::black){
-        if(node->getParent()->getLeftChild() == node &&
-                (!s->getLeftChild()
-                || s->getLeftChild()->getColor() == color::red) &&
-                (!s->getRightChild()
-                || s->getRightChild()->getColor() == color::black)){
-            s->setColor(color::red);
-            s->getLeftChild()->setColor(color::black);
-            rightRotate(s);
-        }
-        else if(node->getParent()->getRightChild() == node &&
-                (!s->getLeftChild()
-                 || s->getLeftChild()->getColor() == color::black) &&
-                (!s->getRightChild()
-                 || s->getRightChild()->getColor() == color::red)){
-            s->setColor(color::red);
-            s->getRightChild()->setColor(color::black);
-            leftRotate(s);
-        }
-    }
-    sixthDelCase(node);
-}
-
-template<typename ValueType, typename KeyType>
-void RBTree<ValueType, KeyType>::sixthDelCase(RBTree::Node *node) {
-    Node* s = node->getBrother();
-    s->setColor(node->getParent()->getColor());
-    node->getParent()->setColor(color::black);
-    if(node->getParent()->getLeftChild() == node){
-        if(s->getRightChild())
-            s->getRightChild()->setColor(color::black);
-        leftRotate(node->getParent());
-    }
-    else{
-        s->getLeftChild()->setColor(color::black);
-        rightRotate(node->getParent());
-    }
 }
 
 template<typename ValueType, typename KeyType>
