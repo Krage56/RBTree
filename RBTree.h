@@ -7,6 +7,7 @@
 
 #include <cstddef>
 #include <list>
+
 template <typename ValueType, typename KeyType>
 class RBTree {
     enum color{
@@ -46,7 +47,7 @@ class RBTree {
         };
 public:
     RBTree();
-    ~RBTree()= default;//потом заменить на последовательное удаление узлов
+    ~RBTree();//потом заменить на последовательное удаление узлов
     void add(const KeyType& key, const ValueType& value);
     ValueType find(const KeyType& key)const;
     [[nodiscard]] size_t getCapacity()const;
@@ -247,6 +248,31 @@ typename RBTree<ValueType, KeyType>::Node *RBTree<ValueType, KeyType>::getLastLe
         node = node->getLeftChild();
     }
     return node;
+}
+
+template<typename ValueType, typename KeyType>
+RBTree<ValueType, KeyType>::~RBTree() {
+    Node* node = _root;
+    Node* leaf = nullptr;
+    while(node){
+        if(node->getLeftChild()){
+            node = node->getLeftChild();
+        }
+        else if(node->getRightChild()){
+            node = node->getRightChild();
+        }
+        else{
+            leaf = node;
+            node = node->getParent()? node->getParent(): nullptr;
+            if(node && node->getRightChild() && node->getRightChild() == leaf){
+                node->setRightChild(nullptr);
+            }
+            if(node && node->getLeftChild() && node->getLeftChild() == leaf){
+                node->setLeftChild(nullptr);
+            }
+            delete leaf;
+        }
+    }
 }
 
 template<typename ValueType, typename KeyType>
