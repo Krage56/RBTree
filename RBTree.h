@@ -34,9 +34,11 @@ class RBTree {
         protected:
             Node* insert(const KeyType& key, const ValueType& value);
             void setColor(RBTree::color new_color);
+            void setKey(const KeyType& new_key);
             void setParent(Node* new_parent);
             void setLeftChild(Node* new_child);
             void setRightChild(Node* new_child);
+            void setValue(ValueType& val);
         private:
             KeyType key;
             ValueType value;
@@ -47,22 +49,33 @@ class RBTree {
         };
 public:
     RBTree();
-    ~RBTree();//потом заменить на последовательное удаление узлов
+    ~RBTree();
     void add(const KeyType& key, const ValueType& value);
+    void remove(const KeyType& key);
     ValueType find(const KeyType& key)const;
     [[nodiscard]] size_t getCapacity()const;
     [[nodiscard]] bool isEmpty()const;
 protected:
+    void afterDelFix(Node* node);
+    void firstDelCase(Node* node);
+    void secondDelCase(Node* node);
+    void thirdDelCase(Node* node);
+    void fourthDelCase(Node* node);
+    void fifthDelCase(Node* node);
+    void sixthDelCase(Node* node);
+
     void leftRotate(Node* node);
     void rightRotate(Node* node);
+
     void firstAddCase(Node* node);
     void secondAddCase(Node* node);
     void thirdAddCase(Node* node);
     void fourthAddCase(Node* node);
     void fifthAddCase(Node* node);
+
     Node* find(const KeyType& key, Node* root);
-    Node* getLastRight();//Получить узел с наибольшим ключом
-    Node* getLastLeft();//Получить узел с наименьшим узлом
+    Node* getLastRight(Node* root);//Получить узел с наибольшим ключом
+    Node* getLastLeft(Node* root);//Получить узел с наименьшим узлом
 private:
     Node* _root;
     size_t _cap;
@@ -229,8 +242,8 @@ bool RBTree<ValueType, KeyType>::isEmpty() const {
 }
 
 template<typename ValueType, typename KeyType>
-typename RBTree<ValueType, KeyType>::Node *RBTree<ValueType, KeyType>::getLastRight() {
-    Node* node = _root;
+typename RBTree<ValueType, KeyType>::Node *RBTree<ValueType, KeyType>::getLastRight(Node* root) {
+    Node* node = root;
     if(!node)
         return nullptr;
     while(node->getRightChild()){
@@ -240,8 +253,8 @@ typename RBTree<ValueType, KeyType>::Node *RBTree<ValueType, KeyType>::getLastRi
 }
 
 template<typename ValueType, typename KeyType>
-typename RBTree<ValueType, KeyType>::Node *RBTree<ValueType, KeyType>::getLastLeft() {
-    Node* node = _root;
+typename RBTree<ValueType, KeyType>::Node *RBTree<ValueType, KeyType>::getLastLeft(Node* root) {
+    Node* node = root;
     if(!node)
         return nullptr;
     while(node->getLeftChild()){
@@ -272,6 +285,154 @@ RBTree<ValueType, KeyType>::~RBTree() {
             }
             delete leaf;
         }
+    }
+}
+
+template<typename ValueType, typename KeyType>
+void RBTree<ValueType, KeyType>::remove(const KeyType& key) {
+    Node *lucky = nullptr, *sacrifice = nullptr;
+    Node* node = find(key, _root);
+    if (!node) return;
+    if (!node->getLeftChild() || !node->getRightChild()) {
+        /* sacrifice has a leaf as a child */
+        sacrifice = node;
+    } else {
+        /* find tree successor with a leaf as a child */
+        //sacrifice = getLastLeft(node->getRightChild());
+        sacrifice = getLastRight(node->getLeftChild());
+    }
+
+    /* lucky is sacrifice's only child*/
+    if (sacrifice->getLeftChild())
+        lucky = sacrifice->getLeftChild();
+    else if (sacrifice->getRightChild())
+        lucky = sacrifice->getRightChild();
+
+    /* remove sacrifice from the parent chain */
+    if (sacrifice->getParent())
+        if (sacrifice == sacrifice->getParent()->getLeftChild())
+            sacrifice->getParent()->setLeftChild(lucky);
+        else
+            sacrifice->getParent()->setRightChild(lucky);
+    else
+        _root = lucky;
+    /*if both sacrifice's children are leafs - we must balance it's parent*/
+    lucky? lucky->setParent(sacrifice->getParent()) : lucky = sacrifice->getParent();
+    /*if the sacrifice is not origin node, push sacrifice's data in node*/
+    if (sacrifice != node) {
+        node->setValue(sacrifice->getValue());
+        node->setKey(sacrifice->getKey());
+    }
+    if (sacrifice->getColor() == color::black)
+        afterDelFix(lucky);
+
+    delete (sacrifice);
+    _cap -= 1;
+}
+
+template<typename ValueType, typename KeyType>
+void RBTree<ValueType, KeyType>::afterDelFix(RBTree::Node *node) {
+    if(node->getColor() == color::black){
+        firstDelCase(node);
+    }
+    else{
+        return;
+    }
+}
+
+template<typename ValueType, typename KeyType>
+void RBTree<ValueType, KeyType>::firstDelCase(RBTree::Node *node) {
+    if(node->getParent()){
+        secondDelCase(node);
+    }
+}
+
+template<typename ValueType, typename KeyType>
+void RBTree<ValueType, KeyType>::secondDelCase(RBTree::Node *node) {
+    Node* s = node->getBrother();
+    Node *p = node->getParent();
+    if(s->getColor() == color::red){
+        p->setColor(color::red);
+        s->setColor(color::black);
+    }
+    if(p->getLeftChild() == node){
+        leftRotate(/*node*/p);
+    }
+    else{
+        rightRotate(/*node*/p);
+    }
+    thirdDelCase(node);
+}
+
+template<typename ValueType, typename KeyType>
+void RBTree<ValueType, KeyType>::thirdDelCase(RBTree::Node *node) {
+    Node* s = node->getBrother();
+    if(node->getParent()->getColor() == color::black &&
+    s->getColor() == color::black && (!s->getLeftChild() ||
+    s->getLeftChild()->getColor() == color::black) && (!s->getLeftChild() ||
+    s->getLeftChild()->getColor() == color::black)){
+        s->setColor(color::red);
+        firstDelCase(node->getParent());
+    }
+    else{
+        fourthDelCase(node);
+    }
+}
+
+template<typename ValueType, typename KeyType>
+void RBTree<ValueType, KeyType>::fourthDelCase(RBTree::Node *node) {
+    Node* s = node->getBrother();
+    if(node->getParent()->getColor() == color::red &&
+        s->getColor() == color::black && (!s->getLeftChild() ||
+        s->getLeftChild()->getColor() == color::black)
+        && (!s->getLeftChild() ||
+        s->getLeftChild()->getColor() == color::black)){
+        s->setColor(color::red);
+        node->getParent()->setColor(color::black);
+    }
+    else{
+        fifthDelCase(node);
+    }
+}
+
+template<typename ValueType, typename KeyType>
+void RBTree<ValueType, KeyType>::fifthDelCase(RBTree::Node *node) {
+    Node* s = node->getBrother();
+    if(s->getColor() == color::black){
+        if(node->getParent()->getLeftChild() == node &&
+                (!s->getLeftChild()
+                || s->getLeftChild()->getColor() == color::red) &&
+                (!s->getRightChild()
+                || s->getRightChild()->getColor() == color::black)){
+            s->setColor(color::red);
+            s->getLeftChild()->setColor(color::black);
+            rightRotate(s);
+        }
+        else if(node->getParent()->getRightChild() == node &&
+                (!s->getLeftChild()
+                 || s->getLeftChild()->getColor() == color::black) &&
+                (!s->getRightChild()
+                 || s->getRightChild()->getColor() == color::red)){
+            s->setColor(color::red);
+            s->getRightChild()->setColor(color::black);
+            leftRotate(s);
+        }
+    }
+    sixthDelCase(node);
+}
+
+template<typename ValueType, typename KeyType>
+void RBTree<ValueType, KeyType>::sixthDelCase(RBTree::Node *node) {
+    Node* s = node->getBrother();
+    s->setColor(node->getParent()->getColor());
+    node->getParent()->setColor(color::black);
+    if(node->getParent()->getLeftChild() == node){
+        s->getRightChild()->setColor(color::black);
+        leftRotate(node->getParent());
+    }
+    else{
+        s->getLeftChild()->setColor(color::black);
+        rightRotate(node->getParent());
     }
 }
 
@@ -383,6 +544,16 @@ void RBTree<ValueType, KeyType>::Node::setRightChild(RBTree::Node *new_child) {
 template<typename ValueType, typename KeyType>
 ValueType &RBTree<ValueType, KeyType>::Node::getValue() {
     return value;
+}
+
+template<typename ValueType, typename KeyType>
+void RBTree<ValueType, KeyType>::Node::setValue(ValueType& val) {
+    value = val;
+}
+
+template<typename ValueType, typename KeyType>
+void RBTree<ValueType, KeyType>::Node::setKey(const KeyType &new_key) {
+    key = new_key;
 }
 
 #endif //RED_BLACK_TREE_RBTREE_H
