@@ -52,14 +52,16 @@ public:
     [[nodiscard]] size_t getCapacity()const;
     [[nodiscard]] bool isEmpty()const;
 protected:
-    void left_rotate(Node* node);
-    void right_rotate(Node* node);
-    void first_add_case(Node* node);
-    void second_add_case(Node* node);
-    void third_add_case(Node* node);
-    void fourth_add_case(Node* node);
-    void fifth_add_case(Node* node);
+    void leftRotate(Node* node);
+    void rightRotate(Node* node);
+    void firstAddCase(Node* node);
+    void secondAddCase(Node* node);
+    void thirdAddCase(Node* node);
+    void fourthAddCase(Node* node);
+    void fifthAddCase(Node* node);
     Node* find(const KeyType& key, Node* root);
+    Node* getLastRight();//Получить узел с наибольшим ключом
+    Node* getLastLeft();//Получить узел с наименьшим узлом
 private:
     Node* _root;
     size_t _cap;
@@ -83,62 +85,62 @@ void RBTree<ValueType, KeyType>::add(const KeyType &key, const ValueType &value)
     else{
         new_node = _root->insert(key, value);
     }
-    first_add_case(new_node);
+    firstAddCase(new_node);
     _cap += 1;
 }
 
 template<typename ValueType, typename KeyType>
-void RBTree<ValueType, KeyType>::first_add_case(RBTree::Node *node) {
+void RBTree<ValueType, KeyType>::firstAddCase(RBTree::Node *node) {
     if(node == _root){
         node->nodeColor = RBTree<ValueType, KeyType>::color::black;
     }
     else{
-        second_add_case(node);
+        secondAddCase(node);
     }
 }
 
 template<typename ValueType, typename KeyType>
-void RBTree<ValueType, KeyType>::second_add_case(RBTree::Node *node) {
+void RBTree<ValueType, KeyType>::secondAddCase(RBTree::Node *node) {
     if(node->getParent()->getColor() == color::black){
         return;
     }
     else {
-        third_add_case(node);
+        thirdAddCase(node);
     }
 }
 
 template<typename ValueType, typename KeyType>
-void RBTree<ValueType, KeyType>::third_add_case(RBTree::Node *node) {
+void RBTree<ValueType, KeyType>::thirdAddCase(RBTree::Node *node) {
     Node* uncle = node->getUncle();
     if(uncle && uncle->getColor() == color::red){
         node->getParent()->setColor(color::black);
         uncle->setColor(color::black);
         Node* g = node->getGrandPa();
         g->setColor(color::red);
-        first_add_case(g);
+        firstAddCase(g);
     }
     else{
-        fourth_add_case(node);
+        fourthAddCase(node);
     }
 }
 
 template<typename ValueType, typename KeyType>
-void RBTree<ValueType, KeyType>::fourth_add_case(RBTree::Node *node) {
+void RBTree<ValueType, KeyType>::fourthAddCase(RBTree::Node *node) {
     Node* g = node->getGrandPa();
     Node* p = node->getParent();
     if(node == p->getRightChild() && p == g->getLeftChild()){
-        left_rotate(p);
+        leftRotate(p);
         node = node->getLeftChild();
     }
     else if(node == p->getLeftChild() && p == g->getRightChild()){
-        right_rotate(p);
+        rightRotate(p);
         node = node->getRightChild();
     }
-    fifth_add_case(node);
+    fifthAddCase(node);
 }
 
 template<typename ValueType, typename KeyType>
-void RBTree<ValueType, KeyType>::left_rotate(RBTree::Node *node) {
+void RBTree<ValueType, KeyType>::leftRotate(RBTree::Node *node) {
     Node* new_parent = node->getRightChild();
     new_parent->setParent(node->getParent());
     if(node->getParent() && node == node->getParent()->getRightChild()){
@@ -159,21 +161,21 @@ void RBTree<ValueType, KeyType>::left_rotate(RBTree::Node *node) {
 }
 
 template<typename ValueType, typename KeyType>
-void RBTree<ValueType, KeyType>::fifth_add_case(RBTree::Node *node) {
+void RBTree<ValueType, KeyType>::fifthAddCase(RBTree::Node *node) {
     Node* g = node->getGrandPa();
     node->getParent()->setColor(color::black);
     g->setColor(color::red);
     if(node == node->getParent()->getLeftChild()
     && node->getParent() == g->getLeftChild()){
-        right_rotate(g);
+        rightRotate(g);
     }
     else{
-        left_rotate(g);
+        leftRotate(g);
     }
 }
 
 template<typename ValueType, typename KeyType>
-void RBTree<ValueType, KeyType>::right_rotate(RBTree::Node *node) {
+void RBTree<ValueType, KeyType>::rightRotate(RBTree::Node *node) {
     Node* new_parent = node->getLeftChild();
     new_parent->setParent(node->getParent());
     if(node->getParent() && node == node->getParent()->getRightChild()){
@@ -223,6 +225,28 @@ size_t RBTree<ValueType, KeyType>::getCapacity() const {
 template<typename ValueType, typename KeyType>
 bool RBTree<ValueType, KeyType>::isEmpty() const {
     return _cap == 0;
+}
+
+template<typename ValueType, typename KeyType>
+typename RBTree<ValueType, KeyType>::Node *RBTree<ValueType, KeyType>::getLastRight() {
+    Node* node = _root;
+    if(!node)
+        return nullptr;
+    while(node->getRightChild()){
+        node = node->getRightChild();
+    }
+    return node;
+}
+
+template<typename ValueType, typename KeyType>
+typename RBTree<ValueType, KeyType>::Node *RBTree<ValueType, KeyType>::getLastLeft() {
+    Node* node = _root;
+    if(!node)
+        return nullptr;
+    while(node->getLeftChild()){
+        node = node->getLeftChild();
+    }
+    return node;
 }
 
 template<typename ValueType, typename KeyType>
