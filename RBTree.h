@@ -313,7 +313,7 @@ void RBTree<ValueType, KeyType>::afterDelFix(RBTree::Node *node) {
 
 template<typename ValueType, typename KeyType>
 void RBTree<ValueType, KeyType>::firstDelCase(RBTree::Node *node) {
-    if(!node->getParent()){
+    if(node->getParent()){
         secondDelCase(node);
     }
 }
