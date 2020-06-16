@@ -7,6 +7,7 @@
 
 #include <cstddef>
 #include <list>
+#include <vector>
 
 template <typename ValueType, typename KeyType>
 class RBTree {
@@ -45,10 +46,13 @@ class RBTree {
             Node* parent;
             Node* child_left;
             Node* child_right;
+            bool passed = false;
             RBTree::color nodeColor = RBTree::color::red;//по умолчанию изначально вставляется красный потомок
         };
 public:
     RBTree();
+    RBTree(const RBTree& copy);
+    RBTree(RBTree&& moveCopy) noexcept;
     ~RBTree();
     void add(const KeyType& key, const ValueType& value);
     void remove(const KeyType& key);
@@ -57,9 +61,10 @@ public:
     [[nodiscard]] size_t getCapacity()const;
     [[nodiscard]] bool isEmpty()const;
 protected:
+
     Node * deleteNode(Node* node);
     void afterDelFix(Node* node);
-
+    void forceNodeDelete(Node* root);
     void leftRotate(Node* node);
     void rightRotate(Node* node);
 
@@ -75,14 +80,12 @@ protected:
 private:
     Node* _root;
     size_t _cap;
-    size_t _height;
 };
 
 template<typename ValueType, typename KeyType>
 RBTree<ValueType, KeyType>::RBTree() {
     _root = nullptr;
     _cap = 0;
-    _height = 0;
 }
 
 template<typename ValueType, typename KeyType>
@@ -261,30 +264,7 @@ typename RBTree<ValueType, KeyType>::Node *RBTree<ValueType, KeyType>::getLastLe
 
 template<typename ValueType, typename KeyType>
 RBTree<ValueType, KeyType>::~RBTree() {
-    if(!_cap){
-        return;
-    }
-    Node* node = _root;
-    Node* leaf = nullptr;
-    while(node){
-        if(node->getLeftChild()){
-            node = node->getLeftChild();
-        }
-        else if(node->getRightChild()){
-            node = node->getRightChild();
-        }
-        else{
-            leaf = node;
-            node = node->getParent()? node->getParent(): nullptr;
-            if(node && node->getRightChild() && node->getRightChild() == leaf){
-                node->setRightChild(nullptr);
-            }
-            if(node && node->getLeftChild() && node->getLeftChild() == leaf){
-                node->setLeftChild(nullptr);
-            }
-            delete leaf;
-        }
-    }
+    forceNodeDelete(_root);
 }
 
 template<typename ValueType, typename KeyType>
@@ -462,6 +442,102 @@ typename RBTree<ValueType, KeyType>::Node * RBTree<ValueType, KeyType>::deleteNo
         }
     }
     return node;
+}
+
+template<typename ValueType, typename KeyType>
+RBTree<ValueType, KeyType>::RBTree(const RBTree &copy) {
+    if(!copy.getCapacity()){
+        return;
+    }
+    Node* node = copy._root;
+    RBTree tmp;
+    do{
+        if(!node->passed){
+            tmp.add(node->getKey(), node->getValue());
+            node->passed = true;
+        }
+        if(node->getLeftChild() && !node->getLeftChild()->passed){
+            node = node->getLeftChild();
+        }
+        else if(node->getRightChild() && !node->getRightChild()->passed){
+            node = node->getRightChild();
+        }
+        else{
+            node = node->getParent();
+            if(node == copy._root){
+                if(node->getLeftChild() && !node->getLeftChild()->passed){
+                    node = node->getLeftChild();
+                }
+                else if(node->getRightChild() && !node->getRightChild()->passed){
+                    node = node->getRightChild();
+                }
+            }
+        }
+    }while(node && node != copy._root);
+    _root = tmp._root;
+    _cap = tmp._cap;
+    tmp._cap = 0;
+    //теперь снимем метки с узлов копируемого списка
+    node = copy._root;
+    do{
+        if(node->passed){
+            node->passed = false;
+        }
+        if(node->getLeftChild() && node->getLeftChild()->passed){
+            node = node->getLeftChild();
+        }
+        else if(node->getRightChild() && node->getRightChild()->passed){
+            node = node->getRightChild();
+        }
+        else{
+            node = node->getParent();
+            if(node == copy._root){
+                if(node->getLeftChild() && node->getLeftChild()->passed){
+                    node = node->getLeftChild();
+                }
+                else if(node->getRightChild() && node->getRightChild()->passed){
+                    node = node->getRightChild();
+                }
+            }
+        }
+    }while(node && node != copy._root);
+}
+
+
+template<typename ValueType, typename KeyType>
+void RBTree<ValueType, KeyType>::forceNodeDelete(Node* root) {
+    if(!_cap){
+        return;
+    }
+    Node* node = root;
+    Node* leaf = nullptr;
+    while(node){
+        if(node->getLeftChild()){
+            node = node->getLeftChild();
+        }
+        else if(node->getRightChild()){
+            node = node->getRightChild();
+        }
+        else{
+            leaf = node;
+            node = node->getParent()? node->getParent(): nullptr;
+            if(node && node->getRightChild() && node->getRightChild() == leaf){
+                node->setRightChild(nullptr);
+            }
+            if(node && node->getLeftChild() && node->getLeftChild() == leaf){
+                node->setLeftChild(nullptr);
+            }
+            delete leaf;
+        }
+    }
+}
+
+template<typename ValueType, typename KeyType>
+RBTree<ValueType, KeyType>::RBTree(RBTree &&moveCopy) noexcept {
+    _root = moveCopy._root;
+    _cap = moveCopy._cap;
+    moveCopy._root = nullptr;
+    moveCopy._cap = 0;
 }
 
 template<typename ValueType, typename KeyType>
