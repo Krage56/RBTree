@@ -380,12 +380,13 @@ typename RBTree<ValueType, KeyType>::Node * RBTree<ValueType, KeyType>::deleteNo
         else if (!current->getLeftChild() && current->getRightChild()){
             current->setValue(current->getRightChild()->getValue());
             current->setKey(current->getRightChild()->getKey());
+            Node* buf = current->getRightChild();
 
-            current->setLeftChild(current->getRightChild()->getLeftChild());
+            current->setLeftChild(buf->getLeftChild());
             if(current->getLeftChild())
                 current->getLeftChild()->setParent(current);
 
-            current->setRightChild(current->getRightChild()->getRightChild());
+            current->setRightChild(buf->getRightChild());
             if(current->getRightChild())
                 current->getRightChild()->setParent(current);
 
@@ -395,12 +396,13 @@ typename RBTree<ValueType, KeyType>::Node * RBTree<ValueType, KeyType>::deleteNo
         else if (!current->getRightChild() && current->getLeftChild()){
             current->setValue(current->getLeftChild()->getValue());
             current->setKey(current->getLeftChild()->getKey());
+            Node* buf = current->getLeftChild();
 
-            current->setLeftChild(current->getLeftChild()->getLeftChild());
+            current->setLeftChild(buf->getLeftChild());
             if(current->getLeftChild())
                 current->getLeftChild()->setParent(current);
 
-            current->setRightChild(current->getLeftChild()->getRightChild());
+            current->setRightChild(buf->getRightChild());
             if(current->getRightChild())
                 current->getRightChild()->setParent(current);
 
