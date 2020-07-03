@@ -507,58 +507,38 @@ RBTree<ValueType, KeyType> &RBTree<ValueType, KeyType>::operator=(const RBTree &
         return *this;
     }
     forceNodeDelete(_root);
-    Node* node = copy._root;
-    RBTree tmp;
+    if(!copy.getCapacity()){
+        return *this;
+    }
+    Node* current = copy._root;
+    RBTree<KeyType, ValueType> tmp;
+    std::stack<Node*> stack;
     do{
-        if(!node->passed){
-            tmp.add(node->getKey(), node->getValue());
-            node->passed = true;
+        if(current->getRightChild() && current->getLeftChild()){
+            stack.push(current);
         }
-        if(node->getLeftChild() && !node->getLeftChild()->passed){
-            node = node->getLeftChild();
+        if(current->getLeftChild()){
+            tmp.add(current->getKey(), current->getValue());
+            current = current->getLeftChild();
         }
-        else if(node->getRightChild() && !node->getRightChild()->passed){
-            node = node->getRightChild();
+        else if(current->getRightChild()){
+            tmp.add(current->getKey(), current->getValue());
+            current = current->getRightChild();
         }
-        else{
-            node = node->getParent();
-            if(node == copy._root){
-                if(node->getLeftChild() && !node->getLeftChild()->passed){
-                    node = node->getLeftChild();
-                }
-                else if(node->getRightChild() && !node->getRightChild()->passed){
-                    node = node->getRightChild();
-                }
+        else if(!current->getRightChild() && !current->getLeftChild()){
+            tmp.add(current->getKey(), current->getValue());
+            if(!stack.empty()){
+                current = stack.top()->getRightChild();
+                stack.pop();
+            }
+            else{
+                current = nullptr;
             }
         }
-    }while(node && node != copy._root);
+    }while(current != copy._root && current);
     _root = tmp._root;
     _cap = tmp._cap;
     tmp._cap = 0;
-    //теперь снимем метки с узлов копируемого списка
-    node = copy._root;
-    do{
-        if(node->passed){
-            node->passed = false;
-        }
-        if(node->getLeftChild() && node->getLeftChild()->passed){
-            node = node->getLeftChild();
-        }
-        else if(node->getRightChild() && node->getRightChild()->passed){
-            node = node->getRightChild();
-        }
-        else{
-            node = node->getParent();
-            if(node == copy._root){
-                if(node->getLeftChild() && node->getLeftChild()->passed){
-                    node = node->getLeftChild();
-                }
-                else if(node->getRightChild() && node->getRightChild()->passed){
-                    node = node->getRightChild();
-                }
-            }
-        }
-    }while(node && node != copy._root);
     return *this;
 }
 
