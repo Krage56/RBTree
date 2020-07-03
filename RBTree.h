@@ -357,93 +357,59 @@ void RBTree<ValueType, KeyType>::remove_all(const KeyType &key) {
 
 template<typename ValueType, typename KeyType>
 typename RBTree<ValueType, KeyType>::Node * RBTree<ValueType, KeyType>::deleteNode(Node* node) {
-    if(!node)
-        return nullptr;
-    if(node->getLeftChild() == nullptr &&
-       node->getRightChild() == nullptr){
-        Node* p = node->getParent();
-        afterDelFix(node);
-        if(p && node == p->getRightChild()){
-            p->setRightChild(nullptr);
-        }
-        else if(p){
-            p->setLeftChild(nullptr);
-        }
+    if(_cap == 1 && node == _root){
+        _root = nullptr;
+        return node;
     }
-    else if(!node->getLeftChild()){
-        Node* p = node->getParent();
-        if(p){
-            afterDelFix(node);
-            if(p->getRightChild() == node){
-                p->setRightChild(node->getRightChild());
-            }
-            if(p->getLeftChild() == node){
-                p->setLeftChild(node->getRightChild());
-            }
-            node->getRightChild()->setParent(p);
-        }
-        else{
-            //afterDelFix(node->getRightChild());
-            node->setValue(node->getRightChild()->getValue());
-            node->setKey(node->getRightChild()->getKey());
-            node = deleteNode(node->getRightChild());
-        }
-    }
-    else if(!node->getRightChild()){
-        Node* p = node->getParent();
-        if(p) {
-            afterDelFix(node);
-            if (p->getRightChild() == node) {
-                p->setRightChild(node->getLeftChild());
-            }
-            if (p->getLeftChild() == node) {
-                p->setLeftChild(node->getLeftChild());
-            }
-            node->getLeftChild()->setParent(p);
-        }
-        else{
-            //afterDelFix(node->getLeftChild());
-            node->setValue(node->getLeftChild()->getValue());
-            node->setKey(node->getLeftChild()->getKey());
-            node = deleteNode(node->getLeftChild());
-        }
-    }
-    else{
-        if(!node->getRightChild()->getLeftChild()){
-            Node* p = node->getParent();
+    Node* current = node;
+    bool end = false;
+    while(current && !end){
+        if(!current->getLeftChild() && !current->getRightChild()){
+            afterDelFix(current);
+            Node* p = current->getParent();
             if(p){
-                afterDelFix(node);
-                if(p->getRightChild() == node){
-                    p->setRightChild(node->getRightChild());
-                    node->getRightChild()->setParent(p);
+                if(current == p->getLeftChild()){
+                    p->setLeftChild(nullptr);
                 }
-                if(p->getLeftChild() == node){
-                    p->setLeftChild(node->getRightChild());
-                    node->getRightChild()->setParent(p);
+                if(current == p->getRightChild()){
+                    p->setRightChild(nullptr);
                 }
-                node->getRightChild()->setLeftChild(node->getLeftChild());
-                if(node->getLeftChild()){
-                    node->getLeftChild()->setParent(node->getRightChild());
-                }
+            }
+            end = true;
+        }
+        else if (!current->getLeftChild() && current->getRightChild()){
+            current->setValue(current->getRightChild()->getValue());
+            current->setKey(current->getRightChild()->getKey());
+            current->setLeftChild(current->getRightChild()->getLeftChild());
+            current->setRightChild(current->getRightChild()->getRightChild());
+            current = current->getRightChild();
+            end = true;
+        }
+        else if (!current->getRightChild() && current->getLeftChild()){
+            current->setValue(current->getLeftChild()->getValue());
+            current->setKey(current->getLeftChild()->getKey());
+            current->setLeftChild(current->getLeftChild()->getLeftChild());
+            current->setRightChild(current->getLeftChild()->getRightChild());
+            current = current->getLeftChild();
+            end = true;
+        }
+        //Если есть 2 потомка
+        else{
+            if(!current->getRightChild()->getLeftChild()){
+                current->setValue(current->getRightChild()->getValue());
+                current->setKey(current->getRightChild()->getKey());
+                //применяем операцию удаления к правому потомку
+                current = current->getRightChild();
             }
             else{
-                //afterDelFix(node->getRightChild());
-                node->setValue(node->getRightChild()->getValue());
-                node->setKey(node->getRightChild()->getKey());
-                node = deleteNode(node->getRightChild());
+                Node* l = getLastLeft(current->getRightChild());
+                current->setValue(l->getValue());
+                current->setKey(l->getKey());
+                current = l;
             }
-
-        }//?
-        else{
-            Node* l = getLastLeft(node->getRightChild());
-            //afterDelFix(l);
-            node->setKey(l->getKey());
-            node->setValue(l->getValue());
-            l = deleteNode(l);//вызываем операцию удаления для самой левой ноды
-            node = l;
         }
     }
-    return node;
+    return current;
 }
 
 template<typename ValueType, typename KeyType>
