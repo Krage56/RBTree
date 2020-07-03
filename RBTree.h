@@ -380,16 +380,30 @@ typename RBTree<ValueType, KeyType>::Node * RBTree<ValueType, KeyType>::deleteNo
         else if (!current->getLeftChild() && current->getRightChild()){
             current->setValue(current->getRightChild()->getValue());
             current->setKey(current->getRightChild()->getKey());
+
             current->setLeftChild(current->getRightChild()->getLeftChild());
+            if(current->getLeftChild())
+                current->getLeftChild()->setParent(current);
+
             current->setRightChild(current->getRightChild()->getRightChild());
+            if(current->getRightChild())
+                current->getRightChild()->setParent(current);
+
             current = current->getRightChild();
             end = true;
         }
         else if (!current->getRightChild() && current->getLeftChild()){
             current->setValue(current->getLeftChild()->getValue());
             current->setKey(current->getLeftChild()->getKey());
+
             current->setLeftChild(current->getLeftChild()->getLeftChild());
+            if(current->getLeftChild())
+                current->getLeftChild()->setParent(current);
+
             current->setRightChild(current->getLeftChild()->getRightChild());
+            if(current->getRightChild())
+                current->getRightChild()->setParent(current);
+
             current = current->getLeftChild();
             end = true;
         }
