@@ -8,7 +8,7 @@
 #include <cstddef>
 #include <list>
 #include <vector>
-
+#include <stack>
 template <typename ValueType, typename KeyType>
 class RBTree {
     enum color{
@@ -46,7 +46,6 @@ class RBTree {
             Node* parent;
             Node* child_left;
             Node* child_right;
-            bool passed = false;
             RBTree::color nodeColor = RBTree::color::red;//по умолчанию изначально вставляется красный потомок
         };
 public:
@@ -60,8 +59,8 @@ public:
     void remove(const KeyType& key);
     void remove_all(const KeyType& key);
     ValueType find(const KeyType& key)const;
-    [[nodiscard]] size_t getCapacity()const;
-    [[nodiscard]] bool isEmpty()const;
+    size_t getCapacity()const;
+    bool isEmpty()const;
 protected:
 
     Node * deleteNode(Node* node);
@@ -77,6 +76,7 @@ protected:
     void fifthAddCase(Node* node);
 
     Node* find(const KeyType& key, Node* root);
+
     Node* getLastRight(Node* root);//Получить узел с наибольшим ключом
     Node* getLastLeft(Node* root);//Получить узел с наименьшим узлом
 private:
@@ -433,58 +433,35 @@ RBTree<ValueType, KeyType>::RBTree(const RBTree &copy) {
     if(!copy.getCapacity()){
         return;
     }
-    Node* node = copy._root;
-    RBTree tmp;
+    Node* current = copy._root;
+    RBTree<KeyType, ValueType> tmp;
+    std::stack<Node*> stack;
     do{
-        if(!node->passed){
-            tmp.add(node->getKey(), node->getValue());
-            node->passed = true;
+        if(current->getRightChild() && current->getLeftChild()){
+            stack.push(current);
         }
-        if(node->getLeftChild() && !node->getLeftChild()->passed){
-            node = node->getLeftChild();
+        if(current->getLeftChild()){
+            tmp.add(current->getKey(), current->getValue());
+            current = current->getLeftChild();
         }
-        else if(node->getRightChild() && !node->getRightChild()->passed){
-            node = node->getRightChild();
+        else if(current->getRightChild()){
+            tmp.add(current->getKey(), current->getValue());
+            current = current->getRightChild();
         }
-        else{
-            node = node->getParent();
-            if(node == copy._root){
-                if(node->getLeftChild() && !node->getLeftChild()->passed){
-                    node = node->getLeftChild();
-                }
-                else if(node->getRightChild() && !node->getRightChild()->passed){
-                    node = node->getRightChild();
-                }
+        else if(!current->getRightChild() && !current->getLeftChild()){
+            tmp.add(current->getKey(), current->getValue());
+            if(!stack.empty()){
+                current = stack.top()->getRightChild();
+                stack.pop();
+            }
+            else{
+                current = nullptr;
             }
         }
-    }while(node && node != copy._root);
+    }while(current != copy._root && current);
     _root = tmp._root;
     _cap = tmp._cap;
     tmp._cap = 0;
-    //теперь снимем метки с узлов копируемого списка
-    node = copy._root;
-    do{
-        if(node->passed){
-            node->passed = false;
-        }
-        if(node->getLeftChild() && node->getLeftChild()->passed){
-            node = node->getLeftChild();
-        }
-        else if(node->getRightChild() && node->getRightChild()->passed){
-            node = node->getRightChild();
-        }
-        else{
-            node = node->getParent();
-            if(node == copy._root){
-                if(node->getLeftChild() && node->getLeftChild()->passed){
-                    node = node->getLeftChild();
-                }
-                else if(node->getRightChild() && node->getRightChild()->passed){
-                    node = node->getRightChild();
-                }
-            }
-        }
-    }while(node && node != copy._root);
 }
 
 
